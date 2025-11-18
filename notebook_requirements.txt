@@ -1,10 +1,11 @@
 # Jupyter Notebook Requirements
 # Install with: pip install -r notebook_requirements.txt
 
-jupyter==1.0.0
-jupyterlab==4.0.9
-notebook==7.0.6
-requests==2.31.0
-pandas==2.1.4
-matplotlib==3.8.2
-ipython==8.18.1
+jupyter
+jupyterlab
+notebook
+requests
+pandas
+matplotlib
+ipython
+

@@ -8,12 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3.10-dev \
     python3-pip \
-    gcc \
-    g++ \
+    build-essential \
     git \
     wget \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    libffi-dev \
+    libjpeg-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.10 as default
@@ -28,6 +30,14 @@ WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
+
+# Install PyTorch and torchvision first
+RUN pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2
+
+# Install detectron2 from Facebook's wheel repository (CUDA 11.8 + PyTorch 2.0)
+RUN pip install --no-cache-dir detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu118/torch2.0/index.html
+
+# Install remaining requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Download MinerU models

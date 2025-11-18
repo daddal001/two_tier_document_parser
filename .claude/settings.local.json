@@ -25,7 +25,10 @@
       "Bash(cd:*)",
       "Bash(git ls-tree:*)",
       "Bash(sed:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "WebFetch(domain:docs.docker.com)",
+      "WebFetch(domain:docs.cloud.google.com)",
+      "WebFetch(domain:docs.nvidia.com)"
     ],
     "deny": [],
     "ask": []
