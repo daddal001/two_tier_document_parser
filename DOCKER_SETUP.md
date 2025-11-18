@@ -63,9 +63,19 @@ curl -X POST http://localhost:8005/parse \
 ## Using the Jupyter Notebook
 
 ### 1. Install Notebook Dependencies
-
 ```bash
 pip install -r notebook_requirements.txt
+```
+
+### Create venv
+
+```bash
+python3 -m venv venv
+```
+
+### activate venv
+```bash
+source venv/bin/activate
 ```
 
 ### 2. Launch Jupyter Lab
