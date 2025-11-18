@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  fast-parser:
+    build:
+      context: ./fast
+      dockerfile: Dockerfile
+    container_name: fast-parser
+    ports:
+      - "8004:8004"
+    environment:
+      - PYTHON_GIL=0
+      - WORKERS=4
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  accurate-parser:
+    build:
+      context: ./accurate
+      dockerfile: Dockerfile
+    container_name: accurate-parser
+    ports:
+      - "8005:8005"
+    environment:
+      - WORKERS=2
+      - LOG_LEVEL=INFO
+      - CUDA_VISIBLE_DEVICES=0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 16G
+        reservations:
+          cpus: '1'
+          memory: 8G
+    # Uncomment below to enable GPU support (requires nvidia-docker)
+    # runtime: nvidia
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+networks:
+  default:
+    name: document-parser-network

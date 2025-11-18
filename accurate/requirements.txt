@@ -1,0 +1,18 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+pymupdf==1.23.8
+
+# MinerU and dependencies
+magic-pdf[full]==0.7.0b1
+torch==2.0.1
+torchvision==0.15.2
+detectron2==0.6
+
+# Additional dependencies for MinerU
+pillow>=10.0.0
+paddleocr>=2.7.0
+paddlepaddle>=2.5.0
+numpy<2.0.0
+opencv-python>=4.8.0
