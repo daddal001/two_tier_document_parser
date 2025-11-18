@@ -63,6 +63,64 @@ two_tier_document_parser/
 - Monitoring configurations
 - Network policies
 
+## MinerU Integration (Git Submodule)
+
+This repository uses MinerU as a git submodule for the accurate parser service. The MinerU directory is a reference to the official [opendatalab/MinerU](https://github.com/opendatalab/MinerU) repository.
+
+**Key Commands:**
+```bash
+# Clone repository with submodules
+git clone --recurse-submodules <repo-url>
+
+# If already cloned, initialize submodule
+git submodule init
+git submodule update
+
+# Update MinerU to latest version
+cd MinerU
+git pull origin master
+cd ..
+git add MinerU
+git commit -m "Update MinerU submodule"
+
+# Check current MinerU version
+git submodule status
+```
+
+**Installation for Development:**
+```bash
+# Install MinerU in editable mode
+cd MinerU
+pip install -e .[core]
+
+# Download MinerU models (required for accurate parser)
+mineru-models-download
+
+cd ..
+```
+
+**Why Git Submodules:**
+- ✅ Pin to specific tested MinerU versions
+- ✅ Easy updates to newer releases
+- ✅ Clean separation between your code and MinerU
+- ✅ Reduced repository size (reference, not full copy)
+- ✅ Contribution-ready - can contribute improvements back to MinerU
+
+**Documentation**: See [GIT_SUBMODULES.md](GIT_SUBMODULES.md) for complete submodule usage guide, troubleshooting, and best practices.
+
+**Integration in Accurate Parser:**
+
+The accurate parser service will import MinerU modules directly:
+
+```python
+# accurate/parser.py (to be implemented)
+from magic_pdf.pipe.UNIPipe import UNIPipe
+from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
+# ... additional MinerU imports
+```
+
+Since MinerU is installed in the Python environment via `pip install -e .[core]`, imports work seamlessly.
+
 ## Development Environment Setup
 
 **Prerequisites:**
