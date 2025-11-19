@@ -41,7 +41,7 @@ RUN cp magic-pdf.json /root/magic-pdf.json
 # Set environment variables
 ENV WORKERS=2
 ENV LOG_LEVEL=INFO
-# ENV CUDA_VISIBLE_DEVICES=0 (Removed to allow CPU mode)
+ENV CUDA_VISIBLE_DEVICES=0
 ENV MINERU_MODEL_SOURCE=local
 
 # Expose port

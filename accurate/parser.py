@@ -54,7 +54,7 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
             
             # Let's stick to 'pipeline' for now as it provides the structured output we need.
             # If 'vlm-transformers' is stable, we could try that too.
-            backend = 'pipeline' 
+            backend = 'vlm' 
             
             # Configure arguments for do_parse
             # We need to pass lists as do_parse expects batch processing

@@ -98,7 +98,7 @@ gcloud compute ssh parser-gpu-test --zone=us-central1-a
 # Verify setup
 nvidia-smi                          # GPU drivers
 docker --version                    # Docker installed
-docker run --rm --gpus all nvidia/cuda:11.8.0-base nvidia-smi  # GPU access
+docker run --rm --gpus all vllm/vllm-openai:v0.10.1.1 nvidia-smi  # GPU access
 ```
 
 ---
@@ -417,7 +417,7 @@ sudo apt-get install -y nvidia-container-toolkit
 sudo systemctl restart docker
 
 # Test
-docker run --rm --gpus all nvidia/cuda:11.8.0-base nvidia-smi
+docker run --rm --gpus all vllm/vllm-openai:v0.10.1.1 nvidia-smi
 ```
 
 ### Out of Memory (OOM)
@@ -461,7 +461,7 @@ nvidia-smi -l 1
 docker run --rm --gpus all accurate-parser:test nvidia-smi
 
 # 2. MinerU models downloaded
-docker exec -it accurate-parser ls /root/.cache/huggingface/
+docker exec -it accurate-parser ls /root/.cache/huggingface/hub
 
 # 3. Disk I/O (should use SSD)
 sudo iostat -xz 1
@@ -531,7 +531,7 @@ gcloud beta billing projects describe YOUR_PROJECT_ID
 Before considering testing complete, verify:
 
 - [ ] GPU drivers installed (`nvidia-smi` works)
-- [ ] Docker has GPU access (`docker run --gpus all nvidia/cuda:11.8.0-base nvidia-smi`)
+- [ ] Docker has GPU access (`docker run --gpus all vllm/vllm-openai:v0.10.1.1 nvidia-smi`)
 - [ ] Fast parser health check returns `"status": "healthy"`
 - [ ] Accurate parser health check returns `"gpu_available": true`
 - [ ] Fast parser completes single document in <1s

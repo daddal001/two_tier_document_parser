@@ -6,10 +6,10 @@
         "endpoint": "http://127.0.0.1:9000"
     },
     "models-dir": "/root/.cache/huggingface/hub",
-    "device-mode": "cpu",
+    "device-mode": "cuda",
     "table-config": {
         "model": "TableMaster",
-        "is_table_recog_enable": false,
+        "is_table_recog_enable": true,
         "max_time": 400
     }
 }
