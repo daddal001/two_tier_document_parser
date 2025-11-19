@@ -16,6 +16,8 @@ This guide explains how to run the two-tier document parser using Docker Compose
 ```bash
 # Build and start both parser services
 docker-compose up --build
+sudo docker-compose up --build
+
 
 # Or run in detached mode
 docker-compose up --build -d
