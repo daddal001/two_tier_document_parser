@@ -44,6 +44,7 @@ services:
       retries: 3
       start_period: 30s
     restart: unless-stopped
+    runtime: nvidia
     deploy:
       resources:
         limits:
@@ -52,11 +53,6 @@ services:
         reservations:
           cpus: '1'
           memory: 8G
-    # Uncomment below to enable GPU support (requires nvidia-docker)
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
           devices:
             - driver: nvidia
               count: 1
