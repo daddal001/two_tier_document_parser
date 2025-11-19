@@ -62,7 +62,7 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
                 output_dir=str(output_dir),
                 pdf_file_names=[filename.rsplit('.', 1)[0]], # Remove extension for folder name
                 pdf_bytes_list=[pdf_bytes],
-                p_lang_list=['ch'], # Default to 'ch' (auto detection is better but API asks for list)
+                p_lang_list=['_'], # Use '_' for auto/universal detection
                 backend=backend,
                 parse_method='auto',
                 formula_enable=True,

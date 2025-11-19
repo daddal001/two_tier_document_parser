@@ -52,6 +52,13 @@ async def startup_event():
     device_mode = "cuda" if GPU_AVAILABLE else "cpu"
     
     logger.info(f"Detected GPU availability: {GPU_AVAILABLE}. Setting MinerU device-mode to '{device_mode}'.")
+    if GPU_AVAILABLE:
+        try:
+            logger.info(f"CUDA Version: {torch.version.cuda}")
+            logger.info(f"CuDNN Version: {torch.backends.cudnn.version()}")
+            logger.info(f"Device Name: {torch.cuda.get_device_name(0)}")
+        except Exception as e:
+            logger.warning(f"Could not get detailed GPU info: {e}")
     
     try:
         if config_path.exists():
@@ -67,8 +74,8 @@ async def startup_event():
                 "models-dir": "/root/.cache/huggingface/hub",
                 "table-config": {
                     "model": "TableMaster",
-                    "is_table_recog_enable": False,
-                    "max_time": 400
+                    "is_table_recog_enable": True,
+                    "max_time": 1200
                 }
             }
             

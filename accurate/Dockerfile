@@ -24,9 +24,13 @@ WORKDIR /app
 # Copy requirements
 COPY requirements.txt .
 
-# Install python dependencies
+# Install python dependencies (FastAPI, uvicorn, etc.)
 # We use --break-system-packages because we are in a container and want to install to system python
 RUN python3 -m pip install -r requirements.txt --break-system-packages
+
+# Copy local MinerU submodule and install it
+COPY ../MinerU /tmp/MinerU
+RUN python3 -m pip install -e /tmp/MinerU[core] --break-system-packages
 
 # Download MinerU models
 # Using HuggingFace source as per official Dockerfile
@@ -43,6 +47,9 @@ ENV WORKERS=2
 ENV LOG_LEVEL=INFO
 ENV CUDA_VISIBLE_DEVICES=0
 ENV MINERU_MODEL_SOURCE=local
+ENV MINERU_VLM_FORMULA_ENABLE=True
+ENV MINERU_VLM_TABLE_ENABLE=True
+ENV MINERU_ENABLE_FORMULA=True
 
 # Expose port
 EXPOSE 8005
