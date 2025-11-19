@@ -28,8 +28,8 @@ services:
 
   accurate-parser:
     build:
-      context: ./accurate
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: accurate/Dockerfile
     container_name: accurate-parser
     ports:
       - "8005:8005"

@@ -22,14 +22,14 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy requirements
-COPY requirements.txt .
+COPY accurate/requirements.txt .
 
 # Install python dependencies (FastAPI, uvicorn, etc.)
 # We use --break-system-packages because we are in a container and want to install to system python
 RUN python3 -m pip install -r requirements.txt --break-system-packages
 
 # Copy local MinerU submodule and install it
-COPY ../MinerU /tmp/MinerU
+COPY MinerU /tmp/MinerU
 RUN python3 -m pip install -e /tmp/MinerU[core] --break-system-packages
 
 # Download MinerU models
@@ -37,7 +37,7 @@ RUN python3 -m pip install -e /tmp/MinerU[core] --break-system-packages
 RUN /bin/bash -c "mineru-models-download -s huggingface -m all"
 
 # Copy application code
-COPY app.py parser.py models.py magic-pdf.json ./
+COPY accurate/app.py accurate/parser.py accurate/models.py accurate/magic-pdf.json ./
 
 # Copy config to user home for MinerU
 RUN cp magic-pdf.json /root/magic-pdf.json
