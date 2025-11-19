@@ -1,7 +1,7 @@
 # Two-Tier Document Parser
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
-[![Status: Planning Phase](https://img.shields.io/badge/Status-Planning%20Phase-yellow.svg)](PARSING_PLAN.md)
+[![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-green.svg)](PARSING_PLAN.md)
 
 **High-performance, open-source PDF parsing microservices with dual parsing strategies: ultra-fast text extraction and GPU-accelerated multimodal parsing.**
 
@@ -18,34 +18,27 @@ This repository implements **two independent microservices** for PDF document pa
 - 📝 **Output**: Markdown text extraction
 - 🎯 **Use Case**: Real-time text extraction for RAG pipelines
 
-### 2. **Accurate Parser Service** - MinerU 2.5
+### 2. **Accurate Parser Service** - MinerU 2.6.4+
 - 🎯 **High-quality**: Multimodal extraction with layout preservation
-- 🚀 **GPU-accelerated**: NVIDIA T4 for fast processing (1.70-2.12 pages/sec)
+- 🚀 **GPU-accelerated**: Uses `vllm` for fast inference (1.70-2.12 pages/sec)
 - 📊 **Rich output**: Markdown + images + tables + formulas
 - 🔄 **Scale-to-zero**: Cost-efficient for batch processing
 - 🎯 **Use Case**: High-fidelity document understanding for complex documents
 
 ---
 
-## 🚧 Current Status: Planning Phase
+## 🚧 Current Status: Active Development
 
-**This repository is in the planning phase.** The architecture and implementation plan are complete, but the services are not yet implemented.
+**This repository is currently under active development.** Both the fast and accurate parser services are implemented and functional in a Docker environment.
 
 ### What's Available Now:
+- ✅ Fast parser service (`fast/`) using PyMuPDF4LLM
+- ✅ Accurate parser service (`accurate/`) using MinerU 2.6.4+
+- ✅ Docker Compose setup for easy local deployment
 - ✅ Comprehensive implementation plan ([PARSING_PLAN.md](PARSING_PLAN.md))
 - ✅ AI assistant development guidance ([CLAUDE.md](CLAUDE.md))
 - ✅ MinerU integrated as git submodule ([GIT_SUBMODULES.md](GIT_SUBMODULES.md))
-- ✅ Architecture design and API specifications
-- ✅ Repository structure and licensing (AGPL-3.0)
 
-### Not Yet Implemented:
-- ❌ Fast parser service (`fast/` directory)
-- ❌ Accurate parser service (`accurate/` directory)
-- ❌ Tests and benchmarks
-- ❌ Docker images
-- ❌ CI/CD pipelines
-
-**Next Steps**: Begin implementation following [PARSING_PLAN.md](PARSING_PLAN.md) Week 1-4 roadmap.
 
 ---
 
@@ -54,7 +47,7 @@ This repository implements **two independent microservices** for PDF document pa
 ### Service Separation
 
 Both services are **completely independent** with different:
-- Base images (Python 3.13-slim vs NVIDIA CUDA 11.8)
+- Base images (Python 3.13-slim vs vLLM/OpenAI)
 - Resource requirements (CPU-only vs GPU-required)
 - Scaling strategies (always-on vs scale-to-zero)
 - Endpoints and APIs
@@ -121,9 +114,31 @@ git commit -m "Update MinerU to latest version"
 
 ---
 
-## Quick Start (Once Implemented)
+## Quick Start
 
-### Fast Parser Service
+### 1. Start Services with Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+This will start both services:
+- **Fast Parser**: `http://localhost:8004`
+- **Accurate Parser**: `http://localhost:8005`
+
+### 2. Test Parsing
+
+```bash
+# Test Fast Parser (0.1s)
+curl -X POST http://localhost:8004/parse -F "file=@test.pdf"
+
+# Test Accurate Parser (1-3 min)
+curl -X POST http://localhost:8005/parse -F "file=@test.pdf"
+```
+
+### Manual Setup (Development)
+
+#### Fast Parser Service
 
 ```bash
 # Navigate to fast parser
@@ -134,12 +149,9 @@ pip install -r requirements.txt
 
 # Run locally with no-GIL enabled
 PYTHON_GIL=0 uvicorn app:app --host 0.0.0.0 --port 8004 --reload
-
-# Test endpoint
-curl -X POST http://localhost:8004/parse -F "file=@test.pdf"
 ```
 
-### Accurate Parser Service
+#### Accurate Parser Service
 
 ```bash
 # Navigate to accurate parser
@@ -148,14 +160,8 @@ cd accurate/
 # Install dependencies (Python 3.10 required)
 pip install -r requirements.txt
 
-# Download MinerU models (first time only)
-python -c "from magic_pdf.model.download_models import download_models; download_models()"
-
 # Run locally
 uvicorn app:app --host 0.0.0.0 --port 8005 --reload
-
-# Test endpoint (takes 1-3 minutes)
-curl -X POST http://localhost:8005/parse -F "file=@test.pdf"
 ```
 
 ---
@@ -202,8 +208,8 @@ two_tier_document_parser/
 ### Accurate Parser
 - **Python 3.10** (MinerU requirement)
 - **FastAPI** 0.115.0+ for async endpoints
-- **MinerU** (magic-pdf[full]) 0.8.0+ for multimodal parsing
-- **CUDA 11.8** + cuDNN 8 for GPU acceleration
+- **MinerU** (mineru[core]) 2.6.4+ for multimodal parsing
+- **vLLM** base image (`vllm/vllm-openai`)
 - **ThreadPoolExecutor** with 2 workers (GPU bottleneck)
 - **uvicorn** for ASGI server
 
@@ -332,11 +338,11 @@ Internal DNS:
 ## Roadmap
 
 ### Week 1: Public Repo Creation
-- [ ] Implement fast parser (~150 lines)
-- [ ] Implement accurate parser (~250 lines)
-- [ ] Test Python 3.13 no-GIL locally
+- [x] Implement fast parser (~150 lines)
+- [x] Implement accurate parser (~250 lines)
+- [x] Test Python 3.13 no-GIL locally
 - [ ] Test concurrency (4 simultaneous requests)
-- [ ] Write comprehensive README
+- [x] Write comprehensive README
 
 ### Week 2: Private Repo Integration
 - [ ] Add git submodule to private repo

@@ -115,7 +115,7 @@ The notebook will:
 ### Service: accurate-parser
 
 - **Port**: 8005
-- **Base Image**: nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+- **Base Image**: vllm/vllm-openai:v0.10.1.1
 - **CPU**: 2 cores
 - **Memory**: 8-16GB
 - **GPU**: Optional (uncomment in docker-compose.yml)
@@ -197,7 +197,7 @@ docker exec accurate-parser python -c "import torch; print(torch.cuda.is_availab
 **Issue**: MinerU model download failed
 ```bash
 # Manually download models in container
-docker exec accurate-parser python -c "from magic_pdf.model.download_models import download_models; download_models()"
+docker exec accurate-parser mineru-models-download -s huggingface -m all
 ```
 
 ### General Issues
@@ -284,6 +284,7 @@ Once services are running, interactive API docs are available at:
 - **Throughput**: 1.70-2.12 pages/second
 - **Concurrency**: 2 workers (GPU bottleneck)
 - **Best for**: Documents with images, tables, formulas
+- **Base**: vLLM/OpenAI (MinerU 2.6.4+)
 
 ## License
 

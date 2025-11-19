@@ -18,9 +18,9 @@ This repository implements **two completely independent microservices** for docu
    - Performance: 0.12s per document, ~33 docs/second per pod
    - Port: 8004, Endpoint: `POST /parse`
 
-2. **Accurate Parser Service** (`accurate/`) - MinerU 2.5 for high-quality multimodal extraction
+2. **Accurate Parser Service** (`accurate/`) - MinerU 2.6.4+ for high-quality multimodal extraction
    - Python 3.10 (MinerU requirement)
-   - GPU-accelerated (NVIDIA T4), scale-to-zero capable
+   - GPU-accelerated (uses `vllm` on NVIDIA GPUs), scale-to-zero capable
    - Extracts markdown + PNG images + tables + formulas
    - Performance: 1.70-2.12 pages/second
    - Port: 8005, Endpoint: `POST /parse`
@@ -47,8 +47,8 @@ two_tier_document_parser/
 │   ├── app.py                 # FastAPI app with ThreadPoolExecutor (~60 lines)
 │   ├── parser.py              # MinerU wrapper with image extraction (~100 lines)
 │   ├── models.py              # Pydantic request/response models (~40 lines)
-│   ├── Dockerfile             # nvidia/cuda:11.8.0-cudnn8-runtime base
-│   └── requirements.txt       # magic-pdf[full], fastapi, uvicorn, torch
+│   ├── Dockerfile             # vllm/vllm-openai base
+│   └── requirements.txt       # mineru[core], fastapi, uvicorn
 └── tests/                     # Test suite (to be implemented)
     ├── fast/                  # Fast parser tests
     ├── accurate/              # Accurate parser tests
@@ -94,7 +94,7 @@ cd MinerU
 pip install -e .[core]
 
 # Download MinerU models (required for accurate parser)
-mineru-models-download
+mineru-models-download -s huggingface -m all
 
 cd ..
 ```
@@ -187,7 +187,7 @@ cd accurate/
 pip install -r requirements.txt
 
 # Download MinerU models (first time only)
-python -c "from magic_pdf.model.download_models import download_models; download_models()"
+mineru-models-download -s huggingface -m all
 
 # Run locally
 uvicorn app:app --host 0.0.0.0 --port 8005 --reload
@@ -543,7 +543,7 @@ pytest tests/integration/ -v
 - **Solution**: Reduce batch size, increase memory limit to 32Gi, check for memory leaks with `memory_profiler`
 
 **Issue**: "MinerU models not found"
-- **Solution**: Models should download at Docker build time. Manually download: `python -c "from magic_pdf.model.download_models import download_models; download_models()"`
+- **Solution**: Models should download at Docker build time. Manually download: `mineru-models-download -s huggingface -m all`
 
 **General Issues:**
 

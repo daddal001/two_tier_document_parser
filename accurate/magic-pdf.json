@@ -1,0 +1,16 @@
+{
+    "bucket_info":{
+        "bucket-name": "bucket_name",
+        "access-key": "ak",
+        "secret-key": "sk",
+        "endpoint": "http://127.0.0.1:9000"
+    },
+    "models-dir": "/root/.cache/huggingface/hub",
+    "device-mode": "cpu",
+    "table-config": {
+        "model": "TableMaster",
+        "is_table_recog_enable": false,
+        "max_time": 400
+    }
+}
+

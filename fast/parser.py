@@ -43,7 +43,7 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
                 "pages": page_count,
                 "processing_time_ms": processing_time_ms,
                 "parser": "pymupdf4llm",
-                "version": "0.0.17",
+                "version": "0.2.0",
                 "filename": filename,
                 "source_code": "https://github.com/daddal001/two_tier_document_parser",
                 "license": "AGPL-3.0"

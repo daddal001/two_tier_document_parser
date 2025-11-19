@@ -1,5 +1,6 @@
 """
 MinerU wrapper for accurate PDF parsing with multimodal extraction.
+Using MinerU v2.6.4+
 """
 import base64
 import json
@@ -8,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List
 import os
-
+from loguru import logger
 
 def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
     """
@@ -35,70 +36,94 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
 
         try:
             # Import MinerU components
-            from magic_pdf.pipe.UNIPipe import UNIPipe
-            from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
-            import magic_pdf.model as model_config
+            # New API in MinerU 2.x
+            from mineru.cli.common import do_parse, read_fn
+            from mineru.version import __version__
 
-            # Configure model paths
-            model_config.__use_inside_model__ = True
-
-            # Initialize reader/writer
-            image_writer = DiskReaderWriter(str(output_dir))
-
-            # Read PDF bytes
-            jso_useful_key = {"_pdf_type": "", "model_list": []}
-
-            # Initialize UNIPipe for parsing
-            pipe = UNIPipe(
-                pdf_bytes,
-                jso_useful_key,
-                image_writer,
-                is_debug=False
+            # We use 'pipeline' backend as it's the most robust for standalone usage without complex VLLM server setup
+            # But if the environment has GPUs and VLLM support (which the Dockerfile suggests),
+            # 'vlm-transformers' might be better if we want VLM capabilities without external server.
+            # However, 'pipeline' is the safe default in the official CLI.
+            
+            # NOTE: docker-compose uses vllm-server separate service. 
+            # If we want to use that, we should use 'vlm-http-client' backend.
+            # But here we are running inside a standalone container.
+            # Given the user wants "accurate" parser and we are based on vllm image,
+            # let's try 'pipeline' first as it is self-contained and simpler to invoke via python API.
+            # The 'vlm' backend in 2.x is complex to invoke directly via do_parse without a running server or heavy setup.
+            
+            # Let's stick to 'pipeline' for now as it provides the structured output we need.
+            # If 'vlm-transformers' is stable, we could try that too.
+            backend = 'pipeline' 
+            
+            # Configure arguments for do_parse
+            # We need to pass lists as do_parse expects batch processing
+            do_parse(
+                output_dir=str(output_dir),
+                pdf_file_names=[filename.rsplit('.', 1)[0]], # Remove extension for folder name
+                pdf_bytes_list=[pdf_bytes],
+                p_lang_list=['ch'], # Default to 'ch' (auto detection is better but API asks for list)
+                backend=backend,
+                parse_method='auto',
+                formula_enable=True,
+                table_enable=True,
+                f_dump_md=True,
+                f_dump_middle_json=True,
+                f_dump_content_list=True,
+                f_dump_orig_pdf=False
             )
 
-            # Run pipeline
-            pipe.pipe_classify()
-            pipe.pipe_analyze()
-            pipe.pipe_parse()
-
-            # Get content dictionary
-            content_dict = pipe.pipe_mk_uni_format(
-                str(output_dir),
-                drop_mode="none"
-            )
-
-            # Extract markdown
-            markdown_text = pipe.pipe_mk_markdown(
-                str(output_dir),
-                drop_mode="none"
-            )
-
+            # Result directory name is derived from filename
+            result_dir_name = filename.rsplit('.', 1)[0]
+            result_dir = output_dir / result_dir_name / "auto" # 'auto' is the parse_method
+            
+            # Check if result directory exists
+            if not result_dir.exists():
+                # Fallback to checking just the name if 'auto' subdir isn't created (depends on version)
+                result_dir = output_dir / result_dir_name
+            
+            logger.info(f"Checking for images in: {result_dir / 'images'}")
+            if not (result_dir / "images").exists():
+                logger.warning(f"Image directory not found. Contents of {result_dir}: {list(result_dir.glob('*')) if result_dir.exists() else 'Dir not found'}")
+            
+            # Read content list (structured output)
+            content_list_path = result_dir / f"{result_dir_name}_content_list.json"
+            markdown_path = result_dir / f"{result_dir_name}.md"
+            
+            markdown_text = ""
+            if markdown_path.exists():
+                markdown_text = markdown_path.read_text(encoding='utf-8')
+            
             # Extract images
             images = []
-            image_dir = output_dir / "images"
+            image_dir = result_dir / "images"
             if image_dir.exists():
-                for idx, img_file in enumerate(sorted(image_dir.glob("*.png"))):
-                    with open(img_file, "rb") as f:
-                        img_base64 = base64.b64encode(f.read()).decode('utf-8')
-                    images.append({
-                        "image_id": f"img_{idx}",
-                        "image_base64": img_base64,
-                        "page": 0,  # MinerU provides page info in content_dict
-                        "bbox": None
-                    })
+                for idx, img_file in enumerate(sorted(image_dir.glob("*"))):
+                    if img_file.suffix.lower() in ['.png', '.jpg', '.jpeg']:
+                        with open(img_file, "rb") as f:
+                            img_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        images.append({
+                            "image_id": img_file.name,
+                            "image_base64": img_base64,
+                            "page": 0, # Placeholder
+                            "bbox": None
+                        })
 
-            # Extract tables from markdown (simplified - MinerU embeds tables in markdown)
+            # Tables and Formulas are embedded in the content/markdown
+            # We could parse content_list.json to extract them explicitly if needed
             tables = []
-            # Tables are embedded in the markdown output by MinerU
-
-            # Extract formulas (simplified - MinerU embeds formulas in markdown)
             formulas = []
-            # Formulas are embedded in the markdown output by MinerU
-
-            # Get page count
-            import pymupdf
-            with pymupdf.open(pdf_path) as doc:
-                page_count = len(doc)
+            
+            if content_list_path.exists():
+                content_data = json.loads(content_list_path.read_text(encoding='utf-8'))
+                # We could iterate over content_data to find tables/formulas if structured extraction is needed
+                # For now, we follow the previous pattern of embedding them in MD
+            
+            # Get page count using pymupdf (still useful for metadata)
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(pdf_bytes)
+            page_count = len(pdf)
+            pdf.close()
 
             processing_time_ms = int((time.time() - start_time) * 1000)
 
@@ -108,7 +133,7 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
                     "pages": page_count,
                     "processing_time_ms": processing_time_ms,
                     "parser": "mineru",
-                    "version": "2.5.0",
+                    "version": __version__,
                     "filename": filename,
                     "source_code": "https://github.com/daddal001/two_tier_document_parser",
                     "license": "AGPL-3.0"
@@ -120,15 +145,20 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
 
         except Exception as e:
             # Fallback to basic parsing if MinerU fails
-            print(f"MinerU parsing failed: {e}, falling back to basic extraction")
-
-            # Basic fallback using PyMuPDF
-            import pymupdf
-            with pymupdf.open(pdf_path) as doc:
-                page_count = len(doc)
-                text = ""
-                for page in doc:
-                    text += page.get_text()
+            import traceback
+            tb = traceback.format_exc()
+            logger.error(f"MinerU parsing failed: {e}\nTraceback: {tb}")
+            
+            # Basic fallback using pypdfium2 (since we have it for MinerU)
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(pdf_bytes)
+            page_count = len(pdf)
+            text = ""
+            for page in pdf:
+                text_page = page.get_textpage()
+                text += text_page.get_text_range() + "\n\n"
+                text_page.close()
+            pdf.close()
 
             processing_time_ms = int((time.time() - start_time) * 1000)
 
@@ -140,7 +170,7 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
                     "parser": "mineru_fallback",
                     "version": "1.0.0",
                     "filename": filename,
-                    "error": str(e),
+                    "error": f"{e}\n{tb}",
                     "source_code": "https://github.com/daddal001/two_tier_document_parser",
                     "license": "AGPL-3.0"
                 },

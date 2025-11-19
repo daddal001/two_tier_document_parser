@@ -2,7 +2,7 @@
 
 **Version:** 3.0 (Simplified Two-Service Architecture)
 **Last Updated:** November 2025
-**Status:** Planning Phase
+**Status:** Implementation - Beta
 **License Strategy:** Open-source parsing services (AGPL-3.0), proprietary application integration
 
 ---
@@ -12,10 +12,10 @@
 This plan details the implementation of a **dual-parser architecture** for document processing, consisting of **two completely separate, independent microservices**:
 
 1. **Fast Parser Service** - PyMuPDF4LLM for ultra-fast text extraction (0.12s/doc, no GPU, Python 3.13 no-GIL)
-2. **Accurate Parser Service** - MinerU 2.5 for high-quality extraction with images/tables/formulas (GPU-accelerated, scale-to-zero)
+2. **Accurate Parser Service** - MinerU 2.6.4+ for high-quality extraction with images/tables/formulas (GPU-accelerated, scale-to-zero)
 
 **Critical Architectural Separation:**
-- ✅ **Two separate containers** - Different Dockerfiles, different base images (Python 3.13 vs CUDA 11.8)
+- ✅ **Two separate containers** - Different Dockerfiles, different base images (Python 3.13 vs vLLM/OpenAI)
 - ✅ **Two different endpoints** - Fast: `http://fast-parser:8004/parse`, Accurate: `http://accurate-parser:8005/parse`
 - ✅ **Different resource requirements** - Fast: 4 vCPUs/no GPU, Accurate: 2 vCPUs/1 GPU (T4)
 - ✅ **Different scaling patterns** - Fast: Always-on HPA (2-10 pods), Accurate: Scale-to-zero HPA (0-5 pods)
@@ -41,10 +41,10 @@ This plan details the implementation of a **dual-parser architecture** for docum
 | Aspect | Fast Parser Service | Accurate Parser Service |
 |--------|---------------------|------------------------|
 | **Container Image** | `gcr.io/PROJECT/fast-parser` | `gcr.io/PROJECT/accurate-parser` |
-| **Base Image** | `python:3.13-slim` | `nvidia/cuda:11.8.0-cudnn8-runtime` |
+| **Base Image** | `python:3.13-slim` | `vllm/vllm-openai:v0.10.1.1` |
 | **Dockerfile** | `fast/Dockerfile` | `accurate/Dockerfile` |
 | **Endpoint** | `http://fast-parser.parsing-fast.svc.cluster.local:8004/parse` | `http://accurate-parser.parsing-accurate.svc.cluster.local:8005/parse` |
-| **Parser** | PyMuPDF4LLM | MinerU 2.5 |
+| **Parser** | PyMuPDF4LLM | MinerU 2.6.4+ |
 | **Python Version** | 3.13 (no-GIL) | 3.10 (MinerU requirement) |
 | **License** | AGPL-3.0 | AGPL-3.0 |
 | **Speed** | 0.12s per document | 1.70-2.12 pages/second |
@@ -394,10 +394,10 @@ spec:
 ### Accurate Parser Service (MinerU + GPU)
 
 **Technology Stack:**
-- **Python 3.10** (MinerU requires 3.10)
-- CUDA 11.8 + cuDNN 8
+- **Python 3.10** (MinerU requirement)
+- **vLLM/OpenAI** Base Image (`vllm/vllm-openai`)
 - FastAPI 0.115.0+
-- magic-pdf[full] 0.8.0+ (MinerU package)
+- mineru[core] 2.6.4+
 - uvicorn[standard] 0.30.0+
 - ThreadPoolExecutor (2 workers) - GPU is bottleneck
 
@@ -460,27 +460,32 @@ Single endpoint: `POST /parse`
 
 ```dockerfile
 # accurate/Dockerfile
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+FROM vllm/vllm-openai:v0.10.1.1
 
 WORKDIR /app
 
-# Install Python 3.10
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10 \
-    python3-pip \
-    python3.10-dev \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN ln -s /usr/bin/python3.10 /usr/bin/python
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        fonts-noto-core \
+        fonts-noto-cjk \
+        fontconfig \
+        libgl1 \
+        python3-pip \
+        git \
+        wget \
+        && \
+    fc-cache -fv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install python dependencies
+RUN python3 -m pip install -r requirements.txt --break-system-packages
 
-# Download MinerU models at build time (reduces cold start)
-RUN python -c "from magic_pdf.model.download_models import download_models; download_models()"
+# Download MinerU models
+RUN /bin/bash -c "mineru-models-download -s huggingface -m all"
 
 # Copy application
 COPY . .
@@ -490,9 +495,9 @@ EXPOSE 8005
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8005/health')" || exit 1
+    CMD python3 -c "import httpx; httpx.get('http://localhost:8005/health')" || exit 1
 
-# Run application (single worker - thread pool handles concurrency)
+# Run application
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8005", "--workers", "1"]
 ```
 
@@ -902,12 +907,12 @@ kubectl rollout restart deployment document -n default
 ## Implementation Roadmap
 
 ### Week 1: Public Repo Creation
-- [ ] Create `document-parsing-services` repository (public, AGPL-3.0)
-- [ ] Implement fast parser (~150 lines: app.py, parser.py, models.py, Dockerfile, requirements.txt)
-- [ ] Implement accurate parser (~250 lines: app.py, parser.py, models.py, Dockerfile, requirements.txt)
-- [ ] Test Python 3.13 no-GIL locally (fast parser)
+- [x] Create `document-parsing-services` repository (public, AGPL-3.0)
+- [x] Implement fast parser (~150 lines: app.py, parser.py, models.py, Dockerfile, requirements.txt)
+- [x] Implement accurate parser (~250 lines: app.py, parser.py, models.py, Dockerfile, requirements.txt)
+- [x] Test Python 3.13 no-GIL locally (fast parser)
 - [ ] Test concurrency (4 simultaneous requests to fast parser)
-- [ ] Write README with API docs and Docker usage
+- [x] Write README with API docs and Docker usage
 
 ### Week 2: Private Repo Integration
 - [ ] Add git submodule to `document_agent_v0.2`

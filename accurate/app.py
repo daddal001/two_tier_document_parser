@@ -39,6 +39,46 @@ try:
 except ImportError:
     GPU_AVAILABLE = False
 
+@app.on_event("startup")
+async def startup_event():
+    """
+    Configure MinerU based on hardware availability.
+    Generates magic-pdf.json dynamically.
+    """
+    import json
+    from pathlib import Path
+    
+    config_path = Path("/root/magic-pdf.json")
+    device_mode = "cuda" if GPU_AVAILABLE else "cpu"
+    
+    logger.info(f"Detected GPU availability: {GPU_AVAILABLE}. Setting MinerU device-mode to '{device_mode}'.")
+    
+    try:
+        if config_path.exists():
+            config = json.loads(config_path.read_text())
+        else:
+            config = {
+                "bucket_info":{
+                    "bucket-name": "bucket_name",
+                    "access-key": "ak",
+                    "secret-key": "sk",
+                    "endpoint": "http://127.0.0.1:9000"
+                },
+                "models-dir": "/root/.cache/huggingface/hub",
+                "table-config": {
+                    "model": "TableMaster",
+                    "is_table_recog_enable": False,
+                    "max_time": 400
+                }
+            }
+            
+        config["device-mode"] = device_mode
+        config_path.write_text(json.dumps(config, indent=4))
+        logger.info(f"Updated {config_path} with device-mode: {device_mode}")
+        
+    except Exception as e:
+        logger.error(f"Failed to update magic-pdf.json: {e}")
+
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:

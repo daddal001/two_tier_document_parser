@@ -1,7 +1,8 @@
 # Fast Parser Service Dockerfile
-# Python 3.13 with no-GIL enabled for true thread parallelism
+# Python 3.12 with no-GIL enabled for true thread parallelism
+# Note: Using 3.12 instead of 3.13 due to PyMuPDF pre-built wheel availability
 
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,7 +21,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code

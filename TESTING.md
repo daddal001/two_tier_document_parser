@@ -234,7 +234,9 @@ curl http://localhost:8004/health | python3 -m json.tool
 # {
 #   "status": "healthy",
 #   "workers": 4,
-#   "no_gil": true
+#   "no_gil": true,
+#   "parser": "pymupdf4llm",
+#   "version": "0.0.17+"
 # }
 
 # Accurate parser
@@ -244,7 +246,9 @@ curl http://localhost:8005/health | python3 -m json.tool
 # {
 #   "status": "healthy",
 #   "workers": 2,
-#   "gpu_available": true
+#   "gpu_available": true,
+#   "parser": "mineru",
+#   "version": "2.6.4+"
 # }
 ```
 
@@ -457,7 +461,7 @@ nvidia-smi -l 1
 docker run --rm --gpus all accurate-parser:test nvidia-smi
 
 # 2. MinerU models downloaded
-docker exec -it accurate-parser ls /root/.mineru/
+docker exec -it accurate-parser ls /root/.cache/huggingface/
 
 # 3. Disk I/O (should use SSD)
 sudo iostat -xz 1

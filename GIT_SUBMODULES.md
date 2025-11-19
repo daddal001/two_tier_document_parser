@@ -53,8 +53,8 @@ git push origin main
 
 ```bash
 cd MinerU
-uv pip install -e .[core]
-mineru-models-download
+pip install -e .[core]
+mineru-models-download -s huggingface -m all
 cd ..
 ```
 
@@ -79,8 +79,8 @@ git submodule update
 After cloning, install MinerU:
 ```bash
 cd MinerU
-uv pip install -e .[core]
-mineru-models-download
+pip install -e .[core]
+mineru-models-download -s huggingface -m all
 cd ..
 ```
 
