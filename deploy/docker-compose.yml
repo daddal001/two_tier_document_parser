@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Fast Parser - CPU-based using PyMuPDF4LLM
+  # For high-volume, simple text extraction
+  fast-parser:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.fast
+    container_name: fast-parser
+    ports:
+      - "8004:8004"
+    environment:
+      - PYTHON_GIL=0          # Enable no-GIL mode for true parallelism
+      - WORKERS=4             # Number of thread pool workers
+      - LOG_LEVEL=INFO        # Logging level (DEBUG, INFO, WARNING, ERROR)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  # Accurate Parser - Automatic GPU fallback
+  # - GPU Available: VLM backend (95%+ accuracy, 15-60s/page)
+  # - No GPU: Pipeline backend (80-85% accuracy, 5-15s/page, CPU-only)
+  # - For complex layouts with images, tables, and formulas
+  # - Optional: NVIDIA GPU (Tesla T4 or Ampere+) for highest accuracy
+  accurate-parser:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.accurate
+    container_name: accurate-parser
+    ports:
+      - "8005:8005"
+    volumes:
+      # Mount HuggingFace cache to persist downloaded models across container restarts
+      - huggingface-cache:/root/.cache/huggingface
+    environment:
+      - WORKERS=2                          # Number of thread pool workers
+      - LOG_LEVEL=INFO                     # Logging level
+      - CUDA_VISIBLE_DEVICES=0             # GPU device ID (0 for first GPU)
+      - MINERU_VIRTUAL_VRAM_SIZE=15       # Virtual VRAM size in GB (adjust for your GPU)
+      - UVICORN_TIMEOUT_KEEP_ALIVE=600    # Timeout for VLM processing (10 mins)
+      - TOKENIZERS_PARALLELISM=false      # Disable tokenizer warnings
+      - HF_HUB_ENABLE_HF_TRANSFER=1       # Enable faster downloads
+      - MINERU_TOOLS_CONFIG_JSON=/root/magic-pdf.json  # Tell MinerU where to find config
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    runtime: nvidia  # Optional: Remove this line for CPU-only deployment
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 16G
+        reservations:
+          cpus: '1'
+          memory: 8G
+          devices:  # Optional: Remove this section for CPU-only deployment
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  default:
+    name: document-parser-network
+
+volumes:
+  # Persistent volume for HuggingFace models (downloaded on first run)
+  huggingface-cache:
