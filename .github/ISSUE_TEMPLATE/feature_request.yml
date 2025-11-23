@@ -1,0 +1,153 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide as much detail as possible to help us understand your request.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Describe the problem this feature would solve
+      placeholder: |
+        I'm frustrated when...
+        Currently, there's no way to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: |
+        I would like to see...
+        The feature should work like...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Which component would this affect?
+      description: Select all that apply
+      multiple: true
+      options:
+        - Fast Parser
+        - Accurate Parser
+        - API/REST Interface
+        - Docker Configuration
+        - Documentation
+        - Testing
+        - CI/CD
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (from your perspective)
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Critical for my use case
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe alternative solutions or workarounds you've considered
+      placeholder: |
+        I've tried...
+        Another approach could be...
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples
+      description: Provide examples of how this feature would be used
+      placeholder: |
+        Example 1: When parsing PDFs with...
+        Example 2: In production scenarios where...
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: Mockups or Code Examples
+      description: If applicable, provide mockups, code examples, or API designs
+      render: python
+      placeholder: |
+        # Example API usage
+        response = parser.parse(
+            pdf_path="document.pdf",
+            new_feature=True
+        )
+    validations:
+      required: false
+
+  - type: textarea
+    id: similar
+    attributes:
+      label: Similar Features in Other Tools
+      description: Are there similar features in other tools you can reference?
+      placeholder: |
+        Tool X has a feature like...
+        Reference: https://example.com/docs
+    validations:
+      required: false
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Would you like to contribute this feature?
+      description: Are you interested in implementing this feature yourself?
+      options:
+        - Yes, I would like to implement this
+        - Yes, with guidance from maintainers
+        - Maybe, depending on complexity
+        - No, but I can help test
+        - No, I prefer maintainers implement it
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or information
+      placeholder: Add any other context...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and discussions to ensure this is not a duplicate
+          required: true
+        - label: This feature aligns with the project's goals and scope
+          required: true
+        - label: I have provided sufficient detail for maintainers to understand the request
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **Note:** Feature requests are prioritized based on community interest, alignment with project goals, and maintainer capacity. Please be patient as we review your request!

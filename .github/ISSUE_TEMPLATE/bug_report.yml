@@ -1,0 +1,136 @@
+name: Bug Report
+description: File a bug report to help us improve
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: parser
+    attributes:
+      label: Which parser is affected?
+      description: Select the parser where the issue occurs
+      options:
+        - Fast Parser (PyMuPDF4LLM)
+        - Accurate Parser (MinerU)
+        - Both
+        - Other/Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Start the service with '...'
+        2. Send a PDF with '...'
+        3. Observe error at '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Describe what should have happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Error Messages
+      description: Please paste any relevant log output or error messages
+      render: shell
+      placeholder: |
+        Paste logs here...
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Information about your environment
+      value: |
+        - OS: [e.g., Ubuntu 22.04, Windows 11, macOS 14]
+        - Deployment: [e.g., Docker Compose, Kubernetes, Local]
+        - Parser Version: [e.g., 0.1.0]
+        - Python Version: [e.g., 3.12]
+        - Docker Version: [e.g., 24.0.7]
+        - GPU: [e.g., NVIDIA Tesla T4, None]
+        - CUDA Version: [e.g., 12.1, N/A]
+    validations:
+      required: true
+
+  - type: textarea
+    id: pdf-details
+    attributes:
+      label: PDF Details (if applicable)
+      description: Information about the PDF that causes the issue
+      value: |
+        - PDF Size: [e.g., 2.5 MB]
+        - Number of Pages: [e.g., 15]
+        - PDF Version: [e.g., 1.4, 1.7]
+        - Has Images: [Yes/No]
+        - Has Tables: [Yes/No]
+        - Has Formulas: [Yes/No]
+        - Language: [e.g., English, Chinese]
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Add any other context, screenshots, or information...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have provided all requested information above
+          required: true
+        - label: I am using the latest version of the parser
+          required: false
+        - label: I can provide a sample PDF that reproduces this issue (if applicable)
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **Security Notice:** If this bug has security implications, please report it privately via our [Security Policy](../SECURITY.md) instead of creating a public issue.

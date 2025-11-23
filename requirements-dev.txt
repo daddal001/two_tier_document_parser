@@ -1,0 +1,65 @@
+# Development and testing dependencies (pinned)
+# Generated: 2024-11-23
+# Python: >=3.10
+
+# Include core dependencies
+-r requirements.txt
+
+# Testing framework
+pytest==8.3.4
+pytest-cov==6.0.0
+pytest-asyncio==0.24.0
+pytest-timeout==2.3.1
+pytest-xdist==3.6.1
+
+# Code quality and linting
+ruff==0.7.4  # Fast linter (replaces flake8, pylint)
+black==24.10.0  # Code formatter
+isort==5.13.2  # Import sorter
+mypy==1.13.0  # Type checker
+
+# Security scanning
+bandit==1.8.0  # Security linter
+safety==3.2.11  # Dependency vulnerability scanner
+pip-audit==2.7.3  # PyPI vulnerability scanner
+
+# Pre-commit hooks
+pre-commit==4.0.1
+
+# Documentation
+mkdocs==1.6.1
+mkdocs-material==9.5.48
+mkdocstrings[python]==0.27.0
+
+# Build tools
+build==1.2.2.post1
+twine==6.0.1
+setuptools==75.6.0
+wheel==0.45.1
+
+# Test utilities
+httpx==0.28.1  # Async HTTP client for testing
+pypdf==5.1.0  # For creating test PDFs
+
+# Type stubs
+types-requests==2.32.0.20241016
+types-pyyaml==6.0.12.20240917
+
+# Coverage reporting
+coverage[toml]==7.6.9
+
+# Git hooks and automation
+commitizen==3.29.1  # Commit message formatting
+gitpython==3.1.43  # Git automation
+
+# Development utilities
+ipython==8.30.0  # Enhanced Python shell
+ipdb==0.13.13  # IPython debugger
+python-dotenv==1.0.1  # Environment variable management
+
+# Performance profiling
+memory-profiler==0.61.0
+line-profiler==4.2.0
+
+# Note: Parser-specific dependencies are in their respective directories
+# Install with: pip install -r requirements-dev.txt

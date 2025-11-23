@@ -21,6 +21,18 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
+    # Security options
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation
+    cap_drop:
+      - ALL  # Drop all capabilities
+    cap_add:
+      - NET_BIND_SERVICE  # Only allow binding to ports
+    read_only: false  # Set to true if application doesn't need write access
+    tmpfs:
+      - /tmp
+      - /app/tmp
+    user: "1000:1000"  # Run as non-root user (matches Dockerfile)
     deploy:
       resources:
         limits:
@@ -44,7 +56,7 @@ services:
       - "8005:8005"
     volumes:
       # Mount HuggingFace cache to persist downloaded models across container restarts
-      - huggingface-cache:/root/.cache/huggingface
+      - huggingface-cache:/home/parser/.cache/huggingface
     environment:
       - WORKERS=2                          # Number of thread pool workers
       - LOG_LEVEL=INFO                     # Logging level
@@ -53,7 +65,7 @@ services:
       - UVICORN_TIMEOUT_KEEP_ALIVE=600    # Timeout for VLM processing (10 mins)
       - TOKENIZERS_PARALLELISM=false      # Disable tokenizer warnings
       - HF_HUB_ENABLE_HF_TRANSFER=1       # Enable faster downloads
-      - MINERU_TOOLS_CONFIG_JSON=/root/magic-pdf.json  # Tell MinerU where to find config
+      - MINERU_TOOLS_CONFIG_JSON=/home/parser/magic-pdf.json  # Tell MinerU where to find config
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
       interval: 30s
@@ -61,7 +73,20 @@ services:
       retries: 3
       start_period: 30s
     restart: unless-stopped
-    runtime: nvidia  # Optional: Remove this line for CPU-only deployment
+    # Security options
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation
+    # Note: GPU access requires elevated privileges, so we can't drop ALL capabilities
+    # We keep minimal required capabilities for GPU access
+    user: "1000:1000"  # Run as non-root user (matches Dockerfile)
+    # GPU device configuration: using modern device_requests is preferred
+    # over the legacy `runtime: nvidia`. This works with the NVIDIA Container
+    # Toolkit and newer Docker Compose versions. If you need CPU-only, remove
+    # the `device_requests` block.
+    device_requests:
+      - driver: nvidia
+        count: 1
+        capabilities: [gpu]
     deploy:
       resources:
         limits:

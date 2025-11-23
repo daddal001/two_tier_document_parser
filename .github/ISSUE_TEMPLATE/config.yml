@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/daddal001/two_tier_document_parser/discussions
+    about: Ask questions, share ideas, and discuss with the community
+
+  - name: 📚 Documentation
+    url: https://github.com/daddal001/two_tier_document_parser#readme
+    about: Read the documentation for setup, usage, and troubleshooting guides
+
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/daddal001/two_tier_document_parser/security
+    about: Report security vulnerabilities privately (do not create public issues)
+
+  - name: 💡 Feature Ideas & Feedback
+    url: https://github.com/daddal001/two_tier_document_parser/discussions/categories/ideas
+    about: Share your ideas and feedback with the community before creating a formal feature request

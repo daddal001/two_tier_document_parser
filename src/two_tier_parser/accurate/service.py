@@ -79,7 +79,12 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
         else:
             # Pipeline Backend (CPU-only)
             from mineru.cli.common import do_parse
-            from mineru.backend.pipeline.middle_json_mkcontent import union_make as pipeline_union_make
+            # Some MinerU releases use a different module name for the pipeline "middle_json_mkcontent".
+            # Try the expected import first, then fall back to the alternate filename present in some packages.
+            try:
+                from mineru.backend.pipeline.middle_json_mkcontent import union_make as pipeline_union_make
+            except ModuleNotFoundError:
+                from mineru.backend.pipeline.pipeline_middle_json_mkcontent import union_make as pipeline_union_make
             import tempfile
             import shutil
             
@@ -93,18 +98,40 @@ def parse_pdf(pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
                     f.write(pdf_bytes)
                 
                 logger.info("Running pipeline backend (layout detection + OCR)...")
-                
-                # Run pipeline processing
-                do_parse(
-                    pdf_path=pdf_path,
-                    output_dir=output_dir,
-                    output_image_dir=output_dir,
-                    backend=backend,
-                    model_json_path=None,
-                    start_page_id=0,
-                    end_page_id=None,
-                    image_writer="disk"
-                )
+
+                # Run pipeline processing. Different MinerU releases expose different
+                # signatures for `do_parse`. Try the newer keyword-argument style first,
+                # fall back to the positional-list style if required by the installed package.
+                try:
+                    do_parse(
+                        pdf_path=pdf_path,
+                        output_dir=output_dir,
+                        output_image_dir=output_dir,
+                        backend=backend,
+                        model_json_path=None,
+                        start_page_id=0,
+                        end_page_id=None,
+                        image_writer="disk"
+                    )
+                except TypeError:
+                    # Fallback for older/newer MinerU where signature is
+                    # do_parse(output_dir, pdf_file_names, pdf_bytes_list, p_lang_list, ...)
+                    logger.info("Falling back to alternate do_parse signature (list-based)")
+                    with open(pdf_path, 'rb') as _f:
+                        pdf_bytes_local = _f.read()
+
+                    do_parse(
+                        output_dir,
+                        [pdf_path],
+                        [pdf_bytes_local],
+                        ['auto'],
+                        backend=backend,
+                        start_page_id=0,
+                        end_page_id=None,
+                        f_dump_middle_json=True,
+                        f_draw_layout_bbox=True,
+                        f_draw_span_bbox=True
+                    )
                 
                 # Load middle.json from output
                 middle_json_path = os.path.join(output_dir, filename.replace('.pdf', ''), "middle.json")

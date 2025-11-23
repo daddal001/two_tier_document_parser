@@ -1,0 +1,33 @@
+# Exclude common files from Docker build context
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+*.egg
+*.log
+.DS_Store
+.vscode/
+.idea/
+tests/
+examples/notebooks/.ipynb_checkpoints
+
+# Exclude large local caches
+*.cache/
+root/.cache/
+
+# Node artifacts (if present)
+node_modules/
+npm-debug.log
+
+# OS files
+Thumbs.db
+desktop.ini

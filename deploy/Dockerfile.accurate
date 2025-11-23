@@ -2,7 +2,11 @@
 # Based on official MinerU configuration
 # Use v0.10.2 for Tesla T4 (Turing architecture, Compute Capability 7.5)
 
-FROM vllm/vllm-openai:v0.10.2
+ARG BASE_IMAGE="vllm/vllm-openai:v0.10.2"
+# You can pin the base image to a digest for production stability, for example:
+#   FROM vllm/vllm-openai@sha256:<digest>
+# To override at build time: `docker build --build-arg BASE_IMAGE=myimage:tag .`
+FROM ${BASE_IMAGE}
 
 # Install system dependencies
 RUN apt-get update && \
@@ -45,6 +49,7 @@ RUN echo "📦 Pre-downloading MinerU models (this may take 10-20 minutes)..." &
 COPY pyproject.toml .
 COPY src/ src/
 COPY deploy/entrypoint-accurate.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Install our package and dependencies

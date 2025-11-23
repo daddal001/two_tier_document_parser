@@ -4,8 +4,15 @@ COMPOSE_FILE := deploy/docker-compose.yml
 # Increase timeout for model downloads during build (10-20 minutes)
 export COMPOSE_HTTP_TIMEOUT := 1800
 
+# Use a small cross-platform Python helper to check that the Docker
+# daemon is available. This avoids shell differences between POSIX,
+# cmd.exe, PowerShell, and MSYS environments.
+PYTHON ?= python
+DOCKER_CHECK = @$(PYTHON) scripts/check_docker.py
+
 # Docker commands
 build:
+	$(DOCKER_CHECK)
 	@echo "🔨 Building Docker images..."
 	@echo "⏳ Note: accurate-parser build includes model download (~10-20 min)"
 	docker-compose -f $(COMPOSE_FILE) build
@@ -15,6 +22,7 @@ build-accurate:
 	docker-compose -f $(COMPOSE_FILE) build accurate-parser
 
 up:
+	$(DOCKER_CHECK)
 	docker-compose -f $(COMPOSE_FILE) up --build -d
 
 down:

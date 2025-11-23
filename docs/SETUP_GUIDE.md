@@ -71,7 +71,7 @@ docker-compose -f deploy/docker-compose.yml down
 ```bash
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
 
 # Install with dependencies
 pip install -e .[dev]

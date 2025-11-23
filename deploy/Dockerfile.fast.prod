@@ -1,0 +1,87 @@
+# Production Fast Parser Service Dockerfile
+# Multi-stage build for security and minimal image size
+# Python 3.12 with no-GIL enabled for true thread parallelism
+
+# Build stage
+FROM python:3.12-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libffi-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy only requirements first for better caching
+COPY pyproject.toml README.md ./
+COPY src/ src/
+
+# Build wheel
+RUN pip install --no-cache-dir --upgrade pip build && \
+    python -m build --wheel
+
+# Runtime stage
+FROM python:3.12-slim
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    libjpeg62-turbo \
+    zlib1g \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user and group
+RUN groupadd -r -g 1000 parser && \
+    useradd -r -u 1000 -g parser -m -s /bin/bash parser
+
+# Create app directory with proper permissions
+WORKDIR /app
+RUN chown parser:parser /app
+
+# Copy wheel from builder
+COPY --from=builder /build/dist/*.whl /tmp/
+
+# Install package as root (pip needs write access)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir /tmp/*.whl[fast] && \
+    rm -rf /tmp/*.whl /root/.cache
+
+# Copy application files with proper ownership
+COPY --chown=parser:parser src/ src/
+
+# Create necessary directories for logs/temp with proper permissions
+RUN mkdir -p /app/logs /app/tmp && \
+    chown -R parser:parser /app/logs /app/tmp
+
+# Switch to non-root user
+USER parser:parser
+
+# Set environment variables
+ENV PYTHON_GIL=0 \
+    WORKERS=4 \
+    LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/home/parser/.local/bin:$PATH"
+
+# Expose port
+EXPOSE 8004
+
+# Health check (running as non-root)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')" || exit 1
+
+# Security labels
+LABEL org.opencontainers.image.title="Two-Tier Parser - Fast Service" \
+      org.opencontainers.image.description="Production-ready fast PDF parser with PyMuPDF" \
+      org.opencontainers.image.vendor="Two-Tier Parser Project" \
+      org.opencontainers.image.licenses="AGPL-3.0" \
+      org.opencontainers.image.documentation="https://github.com/daddal001/two_tier_document_parser" \
+      org.opencontainers.image.source="https://github.com/daddal001/two_tier_document_parser"
+
+# Run application as non-root user
+CMD ["python", "-m", "uvicorn", "two_tier_parser.fast.app:app", "--host", "0.0.0.0", "--port", "8004"]

@@ -136,6 +136,11 @@ async def parse(file: UploadFile = File(...)) -> ParseResponse:
             file.filename
         )
 
+        # If worker returned an error dict, surface it as a clear 500 to clients
+        if isinstance(result, dict) and result.get("error"):
+            logger.error(f"Worker returned error for {file.filename}: {result.get('error')}")
+            raise HTTPException(status_code=500, detail=f"Parsing failed: {result.get('error')}")
+
         # Calculate approximate response size
         import json
         response_size_mb = len(json.dumps(result)) / (1024 * 1024)

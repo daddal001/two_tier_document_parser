@@ -1,0 +1,135 @@
+# Production Accurate Parser Service Dockerfile
+# Multi-stage build with security hardening
+# Based on vLLM with GPU support
+
+# Pin base image to specific version for reproducibility
+ARG BASE_IMAGE="vllm/vllm-openai:v0.10.2"
+# For production, pin to digest:
+# ARG BASE_IMAGE="vllm/vllm-openai@sha256:<digest>"
+
+# Build stage
+FROM ${BASE_IMAGE} AS builder
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy MinerU submodule and build wheel
+COPY MinerU /tmp/MinerU
+RUN cd /tmp/MinerU && \
+    python3 -m pip install --no-cache-dir build && \
+    python3 -m build --wheel
+
+# Copy project files and build our wheel
+COPY pyproject.toml README.md ./
+COPY src/ src/
+RUN python3 -m build --wheel
+
+# Runtime stage
+FROM ${BASE_IMAGE}
+
+# Install runtime dependencies only
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        fonts-noto-core \
+        fonts-noto-cjk \
+        fontconfig \
+        libgl1 \
+        git \
+        wget \
+        curl \
+        gosu \
+        && \
+    fc-cache -fv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user and group
+# Note: GPU access requires user to be in video/render groups
+RUN groupadd -r -g 1000 parser && \
+    useradd -r -u 1000 -g parser -G video,render -m -s /bin/bash parser
+
+# Create application directories with proper permissions
+WORKDIR /app
+RUN mkdir -p /app/logs /app/tmp /home/parser/.cache && \
+    chown -R parser:parser /app /home/parser
+
+# Copy wheels from builder
+COPY --from=builder /tmp/MinerU/dist/*.whl /tmp/mineru.whl
+COPY --from=builder /build/dist/*.whl /tmp/app.whl
+
+# Install packages (as root for system-wide installation)
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir /tmp/mineru.whl /tmp/app.whl[accurate] && \
+    python3 -m pip install --no-cache-dir "transformers>=4.51.1,<5.0.0" && \
+    rm -rf /tmp/*.whl /root/.cache
+
+# Copy configuration and application files
+COPY --chown=parser:parser deploy/magic-pdf.json /home/parser/magic-pdf.json
+COPY --chown=parser:parser src/ src/
+COPY --chown=parser:parser deploy/entrypoint-accurate.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# Set environment variables for model management
+ENV MINERU_TOOLS_CONFIG_JSON=/home/parser/magic-pdf.json \
+    MINERU_MODEL_SOURCE=huggingface \
+    HF_HUB_ENABLE_HF_TRANSFER=1 \
+    HF_HOME=/home/parser/.cache/huggingface \
+    TRANSFORMERS_CACHE=/home/parser/.cache/huggingface/transformers \
+    MINERU_VLM_FORMULA_ENABLE=True \
+    MINERU_VLM_TABLE_ENABLE=True \
+    MINERU_ENABLE_FORMULA=True \
+    WORKERS=2 \
+    LOG_LEVEL=INFO \
+    CUDA_VISIBLE_DEVICES=0 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# OPTION 1: Pre-download models during build (increases image size, faster startup)
+# Uncomment if you want models baked into the image
+# RUN echo "📦 Pre-downloading MinerU models..." && \
+#     gosu parser:parser mineru-models-download -s huggingface -m all && \
+#     echo "✅ Models pre-downloaded successfully"
+
+# OPTION 2: Download models at runtime from volume (recommended for production)
+# Models will be downloaded on first run and cached in /home/parser/.cache volume
+# This keeps image size smaller and allows model updates without rebuilding
+
+# Ensure cache directory has proper permissions
+RUN chown -R parser:parser /home/parser/.cache
+
+# Switch to non-root user for runtime
+USER parser:parser
+
+# Expose port
+EXPOSE 8005
+
+# Health check (running as non-root)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')" || exit 1
+
+# Security labels
+LABEL org.opencontainers.image.title="Two-Tier Parser - Accurate Service" \
+      org.opencontainers.image.description="Production-ready accurate PDF parser with MinerU and VLM" \
+      org.opencontainers.image.vendor="Two-Tier Parser Project" \
+      org.opencontainers.image.licenses="AGPL-3.0" \
+      org.opencontainers.image.documentation="https://github.com/daddal001/two_tier_document_parser" \
+      org.opencontainers.image.source="https://github.com/daddal001/two_tier_document_parser"
+
+# Use custom entrypoint with GPU detection
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Production deployment notes:
+# 1. Mount HuggingFace cache volume: -v hf-cache:/home/parser/.cache
+# 2. Set HF_TOKEN for private models: -e HF_TOKEN=your_token
+# 3. GPU access: --gpus all or specific GPU with device_requests
+# 4. Resource limits: Set CPU/memory limits in docker-compose or K8s
+# 5. Network: Use reverse proxy (nginx/traefik) with TLS for production

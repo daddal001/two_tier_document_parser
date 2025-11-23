@@ -1,0 +1,133 @@
+version: 2
+
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"  # Replace with actual reviewer
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+    ignore:
+      # Ignore major version updates for now (manual review required)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Fast parser dependencies
+  - package-ecosystem: "pip"
+    directory: "/src/two_tier_parser/fast"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"
+    labels:
+      - "dependencies"
+      - "fast-parser"
+    commit-message:
+      prefix: "deps(fast)"
+
+  # Accurate parser dependencies
+  - package-ecosystem: "pip"
+    directory: "/src/two_tier_parser/accurate"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"
+    labels:
+      - "dependencies"
+      - "accurate-parser"
+    commit-message:
+      prefix: "deps(accurate)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/deploy"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  # Git submodules (MinerU)
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 1
+    reviewers:
+      - "YOUR_GITHUB_USERNAME"
+    labels:
+      - "dependencies"
+      - "submodule"
+      - "mineru"
+    commit-message:
+      prefix: "deps(submodule)"
+
+# Dependabot configuration notes:
+#
+# 1. Security Updates:
+#    - Dependabot automatically creates PRs for security vulnerabilities
+#    - These are created outside the open-pull-requests-limit
+#
+# 2. Version Constraints:
+#    - Major version updates are ignored by default
+#    - Review major updates manually to assess breaking changes
+#
+# 3. Auto-merge Setup (optional):
+#    - Consider using Dependabot auto-merge for patch/minor updates
+#    - Requires branch protection rules and CI passing
+#
+# 4. Grouping Updates:
+#    - Consider grouping related dependencies in future
+#    - Example: all transformers-related packages together
+#
+# 5. Custom Registries:
+#    - If using private PyPI or Docker registries, add:
+#      registries:
+#        my-registry:
+#          type: python-index
+#          url: https://pypi.example.com
+#
+# 6. Reviewer Aliases:
+#    - Replace YOUR_GITHUB_USERNAME with actual GitHub username or team
+#    - Use team syntax: "@org/team-name"

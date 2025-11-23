@@ -19,6 +19,10 @@ This guide covers testing approaches for the two-tier document parser project.
 ```bash
 # 1. Install dependencies (choose based on what you're testing)
 
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
+
 # For integration tests (recommended, no MinerU needed):
 pip install -e ".[dev]"
 
@@ -69,6 +73,10 @@ pytest tests/unit/ -v          # Test parser code directly (needs [fast] or [acc
 Integration tests call HTTP APIs and don't import parser code directly:
 
 ```bash
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
+
 pip install -e ".[dev]"  # Includes pytest, pypdf, and test utilities
 ```
 
@@ -87,6 +95,10 @@ pip install -e ".[dev]"  # Includes pytest, pypdf, and test utilities
 Unit tests import parser code directly, so they need the parser dependencies:
 
 ```bash
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
+
 # Fast parser unit tests only
 pip install -e ".[fast,dev]"
 
@@ -122,22 +134,26 @@ cd ..
 ### Quick Start
 
 ```bash
-# 1. Install test dependencies (integration tests only need [dev])
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
+
+# 2. Install test dependencies (integration tests only need [dev])
 pip install -e ".[dev]"
 
-# 2. Build and start containers
+# 3. Build and start containers
 make build
 make up
 
-# 3. Run integration tests (tests HTTP APIs)
+# 4. Run integration tests (tests HTTP APIs)
 pytest tests/integration/ -v
 
-# 4. Or test manually with curl
+# 5. Or test manually with curl
 curl http://localhost:8004/health | jq
 curl http://localhost:8005/health | jq
 curl -X POST http://localhost:8004/parse -F "file=@examples/data/sample.pdf" -o result.json
 
-# 5. Stop containers
+# 6. Stop containers
 make down
 ```
 
@@ -147,17 +163,21 @@ make down
 
 **Setup:**
 ```bash
-# 1. Install dependencies (integration tests only need [dev])
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate or Powershell: .\venv\Scripts\Activate.ps1
+
+# 2. Install dependencies (integration tests only need [dev])
 pip install -e ".[dev]"  # Includes pytest, pypdf, and test utilities
 # Note: Integration tests call HTTP APIs, so parser code dependencies not needed
 
-# 2. Start services
+# 3. Start services
 make up
 
-# 3. Wait for services to be healthy (check logs)
+# 4. Wait for services to be healthy (check logs)
 docker logs accurate-parser | grep "Application startup complete"
 
-# 4. Run integration tests
+# 5. Run integration tests
 pytest tests/integration/ -v
 ```
 

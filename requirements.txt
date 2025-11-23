@@ -1,0 +1,39 @@
+# Core dependencies (pinned for reproducibility)
+# Generated: 2024-11-23
+# Python: >=3.10
+
+# FastAPI and web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.18
+starlette==0.41.3
+
+# Data validation and settings
+pydantic==2.10.3
+pydantic-core==2.27.1
+pydantic-settings==2.6.1
+
+# Logging and CLI
+loguru==0.7.3
+rich==13.9.4
+
+# HTTP client
+requests==2.32.3
+certifi==2024.8.30
+urllib3==2.2.3
+
+# ASGI server dependencies
+httptools==0.6.4
+python-dotenv==1.0.1
+pyyaml==6.0.2
+watchfiles==1.0.0
+websockets==14.1
+
+# Typing extensions
+typing-extensions==4.12.2
+annotated-types==0.7.0
+
+# Note: This file contains only core dependencies
+# For parser-specific dependencies, see:
+# - src/two_tier_parser/fast/requirements.txt
+# - src/two_tier_parser/accurate/requirements.txt
