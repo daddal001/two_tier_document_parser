@@ -136,10 +136,23 @@ async def parse(file: UploadFile = File(...)) -> ParseResponse:
             file.filename
         )
 
+        # Check if result is None or contains an error
+        if result is None:
+            logger.error(f"Parsing returned None for {file.filename}")
+            raise HTTPException(status_code=500, detail="Parsing failed: No result returned")
+
+        if "error" in result:
+            logger.error(f"Parsing failed for {file.filename}: {result.get('error')}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Parsing failed: {result.get('error', 'Unknown error')}"
+            )
+
         # Calculate approximate response size
         import json
         response_size_mb = len(json.dumps(result)) / (1024 * 1024)
         
+        # Now safe to access result attributes
         logger.info(
             f'{{"filename": "{file.filename}", "pages": {result["metadata"]["pages"]}, '
             f'"processing_time_ms": {result["metadata"]["processing_time_ms"]}, '
@@ -150,8 +163,10 @@ async def parse(file: UploadFile = File(...)) -> ParseResponse:
         logger.info(f"Sending response to client for {file.filename}")
         return ParseResponse(**result)
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Parsing failed for {file.filename}: {e}")
+        logger.error(f"Parsing failed for {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Parsing failed: {str(e)}")
 
 

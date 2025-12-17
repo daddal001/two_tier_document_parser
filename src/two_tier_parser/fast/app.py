@@ -82,6 +82,20 @@ async def parse(file: UploadFile = File(...)) -> ParseResponse:
             file.filename
         )
 
+        # Check if result is None (shouldn't happen with fast parser, but safety check)
+        if result is None:
+            logger.error(f"Parsing returned None for {file.filename}")
+            raise HTTPException(status_code=500, detail="Parsing failed: No result returned")
+
+        # Check if result contains an error
+        if "error" in result:
+            logger.error(f"Parsing failed for {file.filename}: {result.get('error')}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Parsing failed: {result.get('error', 'Unknown error')}"
+            )
+
+        # Now safe to access result attributes
         logger.info(
             f'{{"filename": "{file.filename}", "pages": {result["metadata"]["pages"]}, '
             f'"processing_time_ms": {result["metadata"]["processing_time_ms"]}}}'
@@ -89,9 +103,11 @@ async def parse(file: UploadFile = File(...)) -> ParseResponse:
 
         return ParseResponse(**result)
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Parsing failed for {file.filename}: {e}")
-        raise HTTPException(status_code=500, detail="Parsing failed")
+        logger.error(f"Parsing failed for {file.filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Parsing failed: {str(e)}")
 
 
 # Import asyncio for event loop
